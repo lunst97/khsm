@@ -122,8 +122,31 @@ RSpec.describe Game, type: :model do
       2.times do
         game_w_questions.answer_current_question!(q.correct_answer_key)
       end
-      
+
       expect(game_w_questions.previous_level).to eq(1)
+    end
+  end
+
+  context 'answer_current_question!' do
+    let(:answer) { game_w_questions.current_game_question.correct_answer_key }
+
+    it ':correct' do
+      expect(game_w_questions.answer_current_question!(answer)).to be_truthy
+    end
+
+    it ':uncorrect' do
+      expect(game_w_questions.answer_current_question!('b')).to be_falsey
+    end
+
+    it ':last(million)' do
+      game_w_questions.current_level = Question::QUESTION_LEVELS.max
+      expect(game_w_questions.answer_current_question!(answer)).to
+    end
+
+    it ':after_timeout' do
+      game_w_questions.created_at = 1.hour.ago
+
+      expect(game_w_questions.answer_current_question!(answer)).to be_falsey
     end
   end
 end

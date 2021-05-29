@@ -109,21 +109,19 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  context 'current_game_question' do
-    it 'check working' do
+  context 'questions' do
+    it 'return current questions' do
       expect(game_w_questions.current_game_question).to eq(game_w_questions.game_questions[0])
     end
   end
 
-  context 'previous_level' do
-    it 'check correct level' do
-      q = game_w_questions.current_game_question
+  context 'levels' do
+    let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
 
-      2.times do
-        game_w_questions.answer_current_question!(q.correct_answer_key)
-      end
-
-      expect(game_w_questions.previous_level).to eq(1)
+    it 'check correct previous level' do
+      expect(game_with_level.previous_level).to eq(1)
+      expect(game_with_level.status).to eq(:in_progress)
+      expect(game_with_level.finished?).to be_falsey
     end
   end
 
@@ -132,21 +130,30 @@ RSpec.describe Game, type: :model do
 
     it ':correct' do
       expect(game_w_questions.answer_current_question!(answer)).to be_truthy
+      expect(game_w_questions.status).to eq(:in_progress)
+      expect(game_w_questions.finished?).to be_falsey
+
     end
 
     it ':uncorrect' do
       expect(game_w_questions.answer_current_question!('b')).to be_falsey
+      expect(game_w_questions.status).to eq(:fail)
+      expect(game_w_questions.finished?).to be_truthy
     end
 
     it ':last(million)' do
       game_w_questions.current_level = Question::QUESTION_LEVELS.max
-      expect(game_w_questions.answer_current_question!(answer)).to
+      game_w_questions.answer_current_question!(answer)
+      expect(game_w_questions.current_level).to eq(15)
+      expect(game_w_questions.status).to eq(:won)
+      expect(game_w_questions.finished?).to be_truthy
     end
 
     it ':after_timeout' do
       game_w_questions.created_at = 1.hour.ago
-
       expect(game_w_questions.answer_current_question!(answer)).to be_falsey
+      expect(game_w_questions.status).to eq(:timeout)
+      expect(game_w_questions.finished?).to be_truthy
     end
   end
 end

@@ -109,51 +109,156 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  context 'questions' do
-    it 'return current questions' do
-      expect(game_w_questions.current_game_question).to eq(game_w_questions.game_questions[0])
+  describe 'check current_game_question / previous_level' do
+    context 'when questions' do
+      context 'return current questions' do
+        it do
+          expect(game_w_questions.current_game_question).to eq(game_w_questions.game_questions[0])
+        end
+      end
+
+      context 'return uncurrent questions' do
+        it do
+          expect(game_w_questions.current_game_question).to_not eq(game_w_questions.game_questions[1])
+        end
+      end
+    end
+
+    context 'when level' do
+      context 'last' do
+        let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
+
+        it do
+          expect(game_with_level.previous_level).to eq(13)
+          expect(game_with_level.finished?).to be_falsey
+          expect(game_with_level.status).to eq(:in_progress)
+        end
+      end
+
+      context 'not last' do
+        let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
+        it do
+          expect(game_with_level.previous_level).to eq(1)
+          expect(game_with_level.finished?).to be_falsey
+          expect(game_with_level.status).to eq(:in_progress)
+        end
+      end
+
+      context 'time out' do
+        let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
+        it do
+          game_with_level.created_at = 1.hour.ago
+          expect(game_with_level.previous_level).to eq(1)
+          expect(game_with_level.finished?).to be_truthy
+          expect(game_with_level.status).to eq(:timeout)
+        end
+      end
     end
   end
 
-  context 'levels' do
-    let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
-
-    it 'check correct previous level' do
-      expect(game_with_level.previous_level).to eq(1)
-      expect(game_with_level.status).to eq(:in_progress)
-      expect(game_with_level.finished?).to be_falsey
-    end
-  end
-
-  context 'answer_current_question!' do
+  describe 'answer_current_question!' do
     let(:answer) { game_w_questions.current_game_question.correct_answer_key }
+    context 'when answer correct' do
+      context 'and question is not last' do
+        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
+        it do
+          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
+          expect(game_with_level_correct.finished?).to be_falsey
+          expect(game_with_level_correct.status).to eq(:in_progress)
+        end
+      end
 
-    it ':correct' do
-      expect(game_w_questions.answer_current_question!(answer)).to be_truthy
-      expect(game_w_questions.status).to eq(:in_progress)
-      expect(game_w_questions.finished?).to be_falsey
+      context 'and question is last' do
+        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
+        it do
+          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
+          expect(game_with_level_correct.finished?).to be_truthy
+          expect(game_with_level_correct.status).to eq(:won)
+        end
+      end
 
+      context 'and time is timeout' do
+        it do
+          game_w_questions.created_at = 1.hour.ago
+          expect(game_w_questions.answer_current_question!(answer)).to be_falsey
+          expect(game_w_questions.finished?).to be_truthy
+          expect(game_w_questions.status).to eq(:timeout)
+        end
+      end
     end
 
-    it ':uncorrect' do
-      expect(game_w_questions.answer_current_question!('b')).to be_falsey
-      expect(game_w_questions.status).to eq(:fail)
-      expect(game_w_questions.finished?).to be_truthy
+    context 'when answer correct' do
+      context 'and question is not last' do
+        it do
+          expect(game_w_questions.answer_current_question!('b')).to be_falsey
+          expect(game_w_questions.status).to eq(:fail)
+          expect(game_w_questions.finished?).to be_truthy
+        end
+      end
+
+      context 'and question is last' do
+        let(:game_with_level_correct) {FactoryGirl.create(:game_with_questions, user: user, current_level: 14)}
+        it do
+          expect(game_with_level_correct.answer_current_question!('b')).to be_falsey
+          expect(game_with_level_correct.status).to eq(:fail)
+          expect(game_with_level_correct.finished?).to be_truthy
+        end
+      end
+
+      context 'and question is timeout' do
+        it do
+          game_w_questions.created_at = 1.hour.ago
+          expect(game_w_questions.answer_current_question!('b')).to be_falsey
+          expect(game_w_questions.status).to eq(:timeout)
+          expect(game_w_questions.finished?).to be_truthy
+        end
+      end
     end
 
-    it ':last(million)' do
-      game_w_questions.current_level = Question::QUESTION_LEVELS.max
-      game_w_questions.answer_current_question!(answer)
-      expect(game_w_questions.current_level).to eq(15)
-      expect(game_w_questions.status).to eq(:won)
-      expect(game_w_questions.finished?).to be_truthy
+    context 'when answer is last' do
+      context 'and question is correct' do
+        it do
+          game_w_questions.current_level = Question::QUESTION_LEVELS.max
+          expect(game_w_questions.answer_current_question!(answer)).to be_truthy
+          expect(game_w_questions.status).to eq(:won)
+          expect(game_w_questions.finished?).to be_truthy
+        end
+      end
+      context 'and question is uncorect' do
+        it do
+          game_w_questions.current_level = Question::QUESTION_LEVELS.max
+          expect(game_w_questions.answer_current_question!('b')).to be_falsey
+          expect(game_w_questions.status).to eq(:fail)
+          expect(game_w_questions.finished?).to be_truthy
+        end
+      end
+      context 'and question is timeout' do
+        it do
+          game_w_questions.current_level = Question::QUESTION_LEVELS.max
+          game_w_questions.created_at = 1.hour.ago
+          expect(game_w_questions.answer_current_question!(answer)).to be_falsey
+          expect(game_w_questions.status).to eq(:timeout)
+          expect(game_w_questions.finished?).to be_truthy
+        end
+      end
     end
 
-    it ':after_timeout' do
-      game_w_questions.created_at = 1.hour.ago
-      expect(game_w_questions.answer_current_question!(answer)).to be_falsey
-      expect(game_w_questions.status).to eq(:timeout)
-      expect(game_w_questions.finished?).to be_truthy
+    context 'when answer is timeout' do
+      let(:game_timeout) {FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago)}
+      context 'and question is correct' do
+        it do
+          expect(game_timeout.answer_current_question!(answer)).to be_falsey
+          expect(game_timeout.status).to eq(:timeout)
+          expect(game_timeout.finished?).to be_truthy
+        end
+      end
+      context 'and question is uncorect' do
+        it do
+          expect(game_timeout.answer_current_question!('b')).to be_falsey
+          expect(game_timeout.status).to eq(:timeout)
+          expect(game_timeout.finished?).to be_truthy
+        end
+      end
     end
   end
 end

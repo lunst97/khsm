@@ -59,4 +59,48 @@ RSpec.describe GameQuestion, type: :model do
       expect(game_question.correct_answer_key).to eq('b')
     end
   end
+
+  describe 'help_hash' do
+    let(:game_question) { FactoryGirl.create(:game_question, a: 2, b: 1, c: 4, d: 3) }
+    context 'check help_hash' do
+      it 'return hash' do
+        expect(game_question.help_hash).to eq({})
+
+        game_question.help_hash[:some_key1] = 'blabla1'
+        game_question.help_hash[:some_key2] = 'blabla2'
+
+        expect(game_question.save).to be_truthy
+
+        gq = GameQuestion.find(game_question.id)
+
+        expect(gq.help_hash).to eq({some_key1: 'blabla1', some_key2: 'blabla2'})
+      end
+    end
+
+    context 'used fifty_fifty' do
+      it 'return current answer' do
+        expect(game_question.help_hash).not_to include(:fifty_fifty)
+
+        game_question.add_fifty_fifty
+
+        expect(game_question.help_hash).to include(:fifty_fifty)
+        ff = game_question.help_hash[:fifty_fifty]
+
+        expect(ff).to include('b')
+        expect(ff.size).to eq 2
+      end
+    end
+
+    context 'used call_friend' do
+      it 'return current answer' do
+        expect(game_question.help_hash).not_to include(:friend_call)
+
+        game_question.add_friend_call
+
+        expect(game_question.help_hash).to include(:friend_call)
+        fc = game_question.help_hash[:friend_call]
+
+      end
+    end
+  end
 end

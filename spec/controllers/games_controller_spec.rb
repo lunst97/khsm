@@ -178,6 +178,12 @@ RSpec.describe GamesController, type: :controller do
   end
 
   describe 'take_money' do
+    let(:user) { FactoryGirl.create(:user) }
+    # админ
+    let(:admin) { FactoryGirl.create(:user, is_admin: true) }
+    # игра с прописанными игровыми вопросами
+    let(:game_w_questions) { FactoryGirl.create(:game_with_questions, user: user, current_level: 4) }
+
     before(:each) { sign_in user }
     context 'when user take money' do
       it 'redirect' do
@@ -198,6 +204,12 @@ RSpec.describe GamesController, type: :controller do
   end
 
   describe 'two games' do
+    let(:user) { FactoryGirl.create(:user) }
+    # админ
+    let(:admin) { FactoryGirl.create(:user, is_admin: true) }
+    # игра с прописанными игровыми вопросами
+    let(:game_w_questions) { FactoryGirl.create(:game_with_questions, user: user, current_level: 4) }
+
     before(:each) { sign_in user }
     context 'when user create 2th game' do
       it 'check redirect 1th game' do
@@ -214,5 +226,31 @@ RSpec.describe GamesController, type: :controller do
     end
   end
 
+  describe 'help' do
+    let(:user) { FactoryGirl.create(:user) }
+    # админ
+    let(:admin) { FactoryGirl.create(:user, is_admin: true) }
+    # игра с прописанными игровыми вопросами
+    let(:game_w_questions) { FactoryGirl.create(:game_with_questions, user: user, current_level: 4) }
 
+    before(:each) { sign_in user }
+    context 'when user used fifty_fifty' do
+      it 'user see alert and variants' do
+        expect(game_w_questions.finished?).to be_falsey
+        expect(game_w_questions.status).to eq(:in_progress)
+        expect(game_w_questions.current_game_question.help_hash[:fifty_fifty]).to eq({})
+        expect(game_w_questions.level).to > 0
+        expect(game_w_questions.fifty_fifty_used).to be_falsey
+
+        put :help, id: game_w_questions.id, help_type: :fifty_fifty
+        game = assigns(:game)
+
+        expect(game.finished?).to be_falsey
+        expect(game.fifty_fifty_used).to be_truthy
+        
+        expect(response).to redirect_to(game_path(game))
+        expect(response.status).to eq(302)
+      end
+    end
+  end
 end

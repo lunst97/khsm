@@ -112,13 +112,13 @@ RSpec.describe Game, type: :model do
   describe 'check current_game_question / previous_level' do
     context 'when questions' do
       context 'return current questions' do
-        it do
+        it 'check current question' do
           expect(game_w_questions.current_game_question).to eq(game_w_questions.game_questions[0])
         end
       end
 
       context 'return uncurrent questions' do
-        it do
+        it 'check uncurrent question' do
           expect(game_w_questions.current_game_question).to_not eq(game_w_questions.game_questions[1])
         end
       end
@@ -127,8 +127,7 @@ RSpec.describe Game, type: :model do
     context 'when level' do
       context 'last' do
         let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
-
-        it do
+        it 'check previous level' do
           expect(game_with_level.previous_level).to eq(13)
           expect(game_with_level.finished?).to be_falsey
           expect(game_with_level.status).to eq(:in_progress)
@@ -137,7 +136,7 @@ RSpec.describe Game, type: :model do
 
       context 'not last' do
         let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
-        it do
+        it 'check previous level' do
           expect(game_with_level.previous_level).to eq(1)
           expect(game_with_level.finished?).to be_falsey
           expect(game_with_level.status).to eq(:in_progress)
@@ -145,12 +144,12 @@ RSpec.describe Game, type: :model do
       end
 
       context 'time out' do
-        let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
-        it do
-          game_with_level.created_at = 1.hour.ago
-          expect(game_with_level.previous_level).to eq(1)
-          expect(game_with_level.finished?).to be_truthy
-          expect(game_with_level.status).to eq(:timeout)
+        let(:game_with_level_timeout) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
+        it 'check previous level' do
+          game_with_level_timeout.created_at = 1.hour.ago
+          expect(game_with_level_timeout.previous_level).to eq(1)
+          expect(game_with_level_timeout.finished?).to be_falsey
+          expect(game_with_level_timeout.status).to eq(:in_progress)
         end
       end
     end
@@ -161,7 +160,7 @@ RSpec.describe Game, type: :model do
     context 'when answer correct' do
       context 'and question is not last' do
         let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
-        it do
+        it 'return true answer' do
           expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
           expect(game_with_level_correct.finished?).to be_falsey
           expect(game_with_level_correct.status).to eq(:in_progress)
@@ -170,7 +169,7 @@ RSpec.describe Game, type: :model do
 
       context 'and question is last' do
         let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
-        it do
+        it 'return true last question answer' do
           expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
           expect(game_with_level_correct.finished?).to be_truthy
           expect(game_with_level_correct.status).to eq(:won)
@@ -178,18 +177,18 @@ RSpec.describe Game, type: :model do
       end
 
       context 'and time is timeout' do
-        it do
-          game_w_questions.created_at = 1.hour.ago
-          expect(game_w_questions.answer_current_question!(answer)).to be_falsey
-          expect(game_w_questions.finished?).to be_truthy
-          expect(game_w_questions.status).to eq(:timeout)
+        let(:game_with_timeout) { FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago) }
+        it 'return true last question answer' do
+          expect(game_with_timeout.answer_current_question!(answer)).to be_falsey
+          expect(game_with_timeout.finished?).to be_truthy
+          expect(game_with_timeout.status).to eq(:timeout)
         end
       end
     end
 
     context 'when answer correct' do
       context 'and question is not last' do
-        it do
+        it 'false question answer' do
           expect(game_w_questions.answer_current_question!('b')).to be_falsey
           expect(game_w_questions.status).to eq(:fail)
           expect(game_w_questions.finished?).to be_truthy
@@ -197,8 +196,8 @@ RSpec.describe Game, type: :model do
       end
 
       context 'and question is last' do
-        let(:game_with_level_correct) {FactoryGirl.create(:game_with_questions, user: user, current_level: 14)}
-        it do
+        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
+        it 'false question answer' do
           expect(game_with_level_correct.answer_current_question!('b')).to be_falsey
           expect(game_with_level_correct.status).to eq(:fail)
           expect(game_with_level_correct.finished?).to be_truthy
@@ -206,18 +205,18 @@ RSpec.describe Game, type: :model do
       end
 
       context 'and question is timeout' do
-        it do
-          game_w_questions.created_at = 1.hour.ago
-          expect(game_w_questions.answer_current_question!('b')).to be_falsey
-          expect(game_w_questions.status).to eq(:timeout)
-          expect(game_w_questions.finished?).to be_truthy
+        let(:game_with_timeout) { FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago) }
+        it 'false question answer' do
+          expect(game_with_timeout.answer_current_question!('f')).to be_falsey
+          expect(game_with_timeout.status).to eq(:timeout)
+          expect(game_with_timeout.finished?).to be_truthy
         end
       end
     end
 
     context 'when answer is last' do
       context 'and question is correct' do
-        it do
+        it 'return true' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
           expect(game_w_questions.answer_current_question!(answer)).to be_truthy
           expect(game_w_questions.status).to eq(:won)
@@ -225,7 +224,7 @@ RSpec.describe Game, type: :model do
         end
       end
       context 'and question is uncorect' do
-        it do
+        it 'return true' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
           expect(game_w_questions.answer_current_question!('b')).to be_falsey
           expect(game_w_questions.status).to eq(:fail)
@@ -233,12 +232,12 @@ RSpec.describe Game, type: :model do
         end
       end
       context 'and question is timeout' do
-        it do
+        let(:game_with_timeout) { FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago) }
+        it 'return false because timeout' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
-          game_w_questions.created_at = 1.hour.ago
-          expect(game_w_questions.answer_current_question!(answer)).to be_falsey
-          expect(game_w_questions.status).to eq(:timeout)
-          expect(game_w_questions.finished?).to be_truthy
+          expect(game_with_timeout.answer_current_question!(answer)).to be_falsey
+          expect(game_with_timeout.status).to eq(:timeout)
+          expect(game_with_timeout.finished?).to be_truthy
         end
       end
     end
@@ -246,14 +245,14 @@ RSpec.describe Game, type: :model do
     context 'when answer is timeout' do
       let(:game_timeout) {FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago)}
       context 'and question is correct' do
-        it do
+        it 'return false because timeout' do
           expect(game_timeout.answer_current_question!(answer)).to be_falsey
           expect(game_timeout.status).to eq(:timeout)
           expect(game_timeout.finished?).to be_truthy
         end
       end
       context 'and question is uncorect' do
-        it do
+        it 'return false because timeout' do
           expect(game_timeout.answer_current_question!('b')).to be_falsey
           expect(game_timeout.status).to eq(:timeout)
           expect(game_timeout.finished?).to be_truthy

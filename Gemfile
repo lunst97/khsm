@@ -26,6 +26,8 @@ group :development, :test do
 
   # Гем, который позволяет смотреть, что видит capybara
   gem 'launchy'
+  gem 'database_cleaner-active_record'
+  gem 'database_cleaner-redis'
 end
 
 group :production do

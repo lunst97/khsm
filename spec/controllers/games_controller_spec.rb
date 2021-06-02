@@ -78,8 +78,11 @@ RSpec.describe GamesController, type: :controller do
     before(:each) { sign_in user }
     context 'uncorrect answer' do
       it 'redirect' do
-        game_w_questions.current_game_question.correct_answer_key.delete('b')
-        put :answer, id: game_w_questions.id, letter: 'b'
+        answers = %w[a b c d]
+        answers.delete(game_w_questions.current_game_question.correct_answer_key)
+
+        answer = answers.sample
+        put :answer, id: game_w_questions.id, letter: answer
 
         game = assigns(:game)
 

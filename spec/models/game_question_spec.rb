@@ -100,6 +100,9 @@ RSpec.describe GameQuestion, type: :model do
         expect(game_question.help_hash).to include(:friend_call)
         fc = game_question.help_hash[:friend_call]
 
+        expect(fc.nil?).to be_falsey
+        expect(fc).to be
+        expect(fc.split(' ').last).to match("#{/^[A|B|C|D]\z/}")
       end
     end
   end

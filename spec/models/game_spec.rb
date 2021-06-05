@@ -161,7 +161,7 @@ RSpec.describe Game, type: :model do
 
   describe 'answer_current_question!' do
     let(:answer) { game_w_questions.current_game_question.correct_answer_key }
-    context 'when answer correct' do
+    context 'when answer is correct' do
       context 'and question is not last' do
         let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
         it 'should answer correct and status game :in_progress' do

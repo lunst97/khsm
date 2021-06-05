@@ -4,7 +4,8 @@ RSpec.describe 'users/show', type: :view do
 
   describe 'view show profile' do
     before(:each) do
-     assign(:user, FactoryGirl.build_stubbed(:user, name: 'Вадик'))
+      user = assign(:user, FactoryGirl.build_stubbed(:user, name: 'Вадик'))
+      allow(view).to receive(:current_user).and_return(user)
 
       render
     end
@@ -18,7 +19,7 @@ RSpec.describe 'users/show', type: :view do
       end
 
       it 'last your game' do
-        assign(:games, FactoryGirl.build_stubbed(:game))
+        assign(:games, [FactoryGirl.build_stubbed(:game)])
         stub_template 'users/_game.html.erb' => 'Игра существует'
 
         render

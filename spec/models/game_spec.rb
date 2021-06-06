@@ -159,105 +159,49 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  describe 'answer_current_question!' do
+  describe '#answer_current_question!' do
     let(:answer) { game_w_questions.current_game_question.correct_answer_key }
+    context 'when answer is wrong' do
+      it 'should finish game with status fail' do
+        expect(game_w_questions.answer_current_question!('b')).to be_falsey
+        expect(game_w_questions.status).to eq(:fail)
+        expect(game_w_questions.finished?).to be_truthy
+      end
+    end
+
     context 'when answer is correct' do
-      context 'and question is not last' do
-        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
-        it 'should answer correct and status game :in_progress' do
-          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
-          expect(game_with_level_correct.finished?).to be_falsey
-          expect(game_with_level_correct.status).to eq(:in_progress)
-        end
-      end
-
       context 'and question is last' do
-        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
-        it 'should answer correct and status game :won' do
-          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
-          expect(game_with_level_correct.finished?).to be_truthy
-          expect(game_with_level_correct.status).to eq(:won)
+        it 'should assign final prize' do
+          game_w_questions.current_level = Question::QUESTION_LEVELS.max
+          expect(game_w_questions.answer_current_question!(answer)).to be_truthy
+          expect(game_w_questions.prize).to eq(1000000)
         end
-      end
 
-      context 'and time is timeout' do
-        let(:game_with_timeout) { FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago) }
-        it 'should answer correct and status game :timeout' do
-          expect(game_with_timeout.answer_current_question!(answer)).to be_falsey
-          expect(game_with_timeout.finished?).to be_truthy
-          expect(game_with_timeout.status).to eq(:timeout)
-        end
-      end
-    end
-
-    context 'when answer correct' do
-      context 'and question is not last' do
-        it 'should answer uncorrect and status game :fail' do
-          expect(game_w_questions.answer_current_question!('b')).to be_falsey
-          expect(game_w_questions.status).to eq(:fail)
-          expect(game_w_questions.finished?).to be_truthy
-        end
-      end
-
-      context 'and question is last' do
-        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
-        it 'should answer uncorrect and status game :fail' do
-          expect(game_with_level_correct.answer_current_question!('b')).to be_falsey
-          expect(game_with_level_correct.status).to eq(:fail)
-          expect(game_with_level_correct.finished?).to be_truthy
-        end
-      end
-
-      context 'and question is timeout' do
-        let(:game_with_timeout) { FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago) }
-        it 'should answer uncorrect and status game :timeout' do
-          expect(game_with_timeout.answer_current_question!('f')).to be_falsey
-          expect(game_with_timeout.status).to eq(:timeout)
-          expect(game_with_timeout.finished?).to be_truthy
-        end
-      end
-    end
-
-    context 'when answer is last' do
-      context 'and question is correct' do
-        it 'should answer correct and status game :won' do
+        it 'should finish game with status won' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
           expect(game_w_questions.answer_current_question!(answer)).to be_truthy
           expect(game_w_questions.status).to eq(:won)
           expect(game_w_questions.finished?).to be_truthy
         end
       end
-      context 'and question is uncorect' do
-        it 'should answer uncorrect and status game :fail' do
-          game_w_questions.current_level = Question::QUESTION_LEVELS.max
-          expect(game_w_questions.answer_current_question!('b')).to be_falsey
-          expect(game_w_questions.status).to eq(:fail)
-          expect(game_w_questions.finished?).to be_truthy
-        end
-      end
-      context 'and question is timeout' do
-        let(:game_with_timeout) { FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago) }
-        it 'should answer correct and status game :timeout' do
-          game_w_questions.current_level = Question::QUESTION_LEVELS.max
-          expect(game_with_timeout.answer_current_question!(answer)).to be_falsey
-          expect(game_with_timeout.status).to eq(:timeout)
-          expect(game_with_timeout.finished?).to be_truthy
-        end
-      end
-    end
 
-    context 'when answer is timeout' do
-      let(:game_timeout) {FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago)}
-      context 'and question is correct' do
-        it 'should answer correct and status game :timeout' do
-          expect(game_timeout.answer_current_question!(answer)).to be_falsey
-          expect(game_timeout.status).to eq(:timeout)
-          expect(game_timeout.finished?).to be_truthy
+      context 'and question is not last' do
+        let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
+        it 'should increase the current level by 1' do
+          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
+          expect(game_with_level_correct.current_level).to eq(3)
+        end
+
+        it 'should continue game' do
+          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
+          expect(game_with_level_correct.status).to eq(:in_progress)
         end
       end
-      context 'and question is uncorect' do
-        it 'should answer uncorrect and status game :timeout' do
-          expect(game_timeout.answer_current_question!('b')).to be_falsey
+
+      context 'and time is out ' do
+        let(:game_timeout) {FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago)}
+        it 'should finish game with status timeout' do
+          expect(game_timeout.answer_current_question!(answer)).to be_falsey
           expect(game_timeout.status).to eq(:timeout)
           expect(game_timeout.finished?).to be_truthy
         end

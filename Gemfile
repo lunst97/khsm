@@ -21,13 +21,14 @@ group :development, :test do
   gem 'rspec-rails', '~> 3.4'
   gem 'factory_girl_rails'
   gem 'shoulda-matchers'
+end
+
+group :test do
   # Гем, который использует rspec, чтобы смотреть наш сайт
   gem 'capybara'
 
   # Гем, который позволяет смотреть, что видит capybara
   gem 'launchy'
-  gem 'database_cleaner-active_record'
-  gem 'database_cleaner-redis'
 end
 
 group :production do

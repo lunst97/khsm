@@ -38,10 +38,8 @@ RSpec.describe Game, type: :model do
     end
   end
 
-
   # тесты на основную игровую логику
   context 'game mechanics' do
-
     # правильный ответ должен продолжать игру
     it 'answer correct continues game' do
       # текущий уровень игры и статус
@@ -68,16 +66,13 @@ RSpec.describe Game, type: :model do
       game_w_questions.answer_current_question!(q.correct_answer_key)
 
       game_w_questions.take_money!
-
       prize = game_w_questions.prize
 
       expect(prize).to eq(100)
       expect(prize).to be > 0
-
       expect(game_w_questions.status).to eq :money
       expect(game_w_questions.finished?).to be_truthy
       expect(user.balance).to eq prize
-
     end
   end
 
@@ -85,22 +80,26 @@ RSpec.describe Game, type: :model do
 
     before(:each) do
       game_w_questions.finished_at = Time.now
+
       expect(game_w_questions.finished?).to be_truthy
     end
 
     it ':won' do
       game_w_questions.current_level = Question::QUESTION_LEVELS.max + 1
+
       expect(game_w_questions.status).to eq(:won)
     end
 
     it ':fail' do
       game_w_questions.is_failed = true
+
       expect(game_w_questions.status).to eq(:fail)
     end
 
     it 'timeout' do
       game_w_questions.created_at = 1.hour.ago
       game_w_questions.is_failed = true
+
       expect(game_w_questions.status).to eq(:timeout)
     end
 
@@ -129,7 +128,7 @@ RSpec.describe Game, type: :model do
         let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 14) }
         it 'check previous level' do
           expect(game_with_level.previous_level).to eq(13)
-          expect(game_with_level.finished?).to be_falsey
+          expect(game_with_level.finished?).to be(false)
           expect(game_with_level.status).to eq(:in_progress)
         end
       end
@@ -139,7 +138,7 @@ RSpec.describe Game, type: :model do
           let(:game_with_level) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
           it 'check previous level' do
             expect(game_with_level.previous_level).to eq(1)
-            expect(game_with_level.finished?).to be_falsey
+            expect(game_with_level.finished?).to be(false)
             expect(game_with_level.status).to eq(:in_progress)
           end
         end
@@ -150,8 +149,9 @@ RSpec.describe Game, type: :model do
           let(:game_with_level_timeout) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
           it 'check previous level' do
             game_with_level_timeout.created_at = 1.hour.ago
+
             expect(game_with_level_timeout.previous_level).to eq(1)
-            expect(game_with_level_timeout.finished?).to be_falsey
+            expect(game_with_level_timeout.finished?).to be(false)
             expect(game_with_level_timeout.status).to eq(:in_progress)
           end
         end
@@ -163,9 +163,9 @@ RSpec.describe Game, type: :model do
     let(:answer) { game_w_questions.current_game_question.correct_answer_key }
     context 'when answer is wrong' do
       it 'should finish game with status fail' do
-        expect(game_w_questions.answer_current_question!('b')).to be_falsey
+        expect(game_w_questions.answer_current_question!('b')).to be(false)
         expect(game_w_questions.status).to eq(:fail)
-        expect(game_w_questions.finished?).to be_truthy
+        expect(game_w_questions.finished?).to be(true)
       end
     end
 
@@ -173,27 +173,29 @@ RSpec.describe Game, type: :model do
       context 'and question is last' do
         it 'should assign final prize' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
-          expect(game_w_questions.answer_current_question!(answer)).to be_truthy
+
+          expect(game_w_questions.answer_current_question!(answer)).to be(true)
           expect(game_w_questions.prize).to eq(1000000)
         end
 
         it 'should finish game with status won' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
-          expect(game_w_questions.answer_current_question!(answer)).to be_truthy
+
+          expect(game_w_questions.answer_current_question!(answer)).to be(true)
           expect(game_w_questions.status).to eq(:won)
-          expect(game_w_questions.finished?).to be_truthy
+          expect(game_w_questions.finished?).to be(true)
         end
       end
 
       context 'and question is not last' do
         let(:game_with_level_correct) { FactoryGirl.create(:game_with_questions, user: user, current_level: 2) }
         it 'should increase the current level by 1' do
-          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
+          expect(game_with_level_correct.answer_current_question!(answer)).to be(true)
           expect(game_with_level_correct.current_level).to eq(3)
         end
 
         it 'should continue game' do
-          expect(game_with_level_correct.answer_current_question!(answer)).to be_truthy
+          expect(game_with_level_correct.answer_current_question!(answer)).to be(true)
           expect(game_with_level_correct.status).to eq(:in_progress)
         end
       end
@@ -201,9 +203,9 @@ RSpec.describe Game, type: :model do
       context 'and time is out ' do
         let(:game_timeout) {FactoryGirl.create(:game_with_questions, user: user, created_at: 1.hour.ago)}
         it 'should finish game with status timeout' do
-          expect(game_timeout.answer_current_question!(answer)).to be_falsey
+          expect(game_timeout.answer_current_question!(answer)).to be(false)
           expect(game_timeout.status).to eq(:timeout)
-          expect(game_timeout.finished?).to be_truthy
+          expect(game_timeout.finished?).to be(true)
         end
       end
     end

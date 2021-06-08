@@ -1,9 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe 'users/show', type: :view do
-
   describe 'view show profile' do
-    let(:user) { FactoryGirl.build_stubbed(:user, name: 'Вадик') }
+    let(:user) { FactoryGirl.build_stubbed(:user, name: 'Алекс') }
 
     before(:each) do
       assign(:user, user)
@@ -15,10 +14,12 @@ RSpec.describe 'users/show', type: :view do
     context 'current user view' do
       before(:each) do
         login_as user
+
+        render
       end
 
       it 'your name' do
-        expect(rendered).to match 'Вадик'
+        expect(rendered).to match 'Алекс'
       end
 
       it 'button editing profile' do
@@ -40,7 +41,7 @@ RSpec.describe 'users/show', type: :view do
 
     context 'another user view' do
       it 'your name' do
-        expect(rendered).to match 'Вадик'
+        expect(rendered).to match 'Алекс'
       end
 
       it 'button editing profile' do

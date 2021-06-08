@@ -75,7 +75,6 @@ RSpec.describe GameQuestion, type: :model do
         expect(game_question.save).to be_truthy
 
         gq = GameQuestion.find(game_question.id)
-
         expect(gq.help_hash).to eq({some_key1: 'blabla1', some_key2: 'blabla2'})
       end
     end
@@ -104,7 +103,7 @@ RSpec.describe GameQuestion, type: :model do
         fc = game_question.help_hash[:friend_call]
 
         expect(fc).to be
-        expect(fc.last).to match(/[A|B|C|D]/)
+        expect(fc.last).to match(/[A|B|C|D]\z/)
       end
     end
   end

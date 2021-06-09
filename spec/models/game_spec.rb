@@ -163,7 +163,10 @@ RSpec.describe Game, type: :model do
     let(:answer) { game_w_questions.current_game_question.correct_answer_key }
     context 'when answer is wrong' do
       it 'should finish game with status fail' do
-        expect(game_w_questions.answer_current_question!('b')).to be(false)
+        answers = %w[a b c d]
+        answers.delete(game_w_questions.current_game_question.correct_answer_key)
+
+        expect(game_w_questions.answer_current_question!(answers.sample)).to be(false)
         expect(game_w_questions.status).to eq(:fail)
         expect(game_w_questions.finished?).to be(true)
       end
@@ -173,9 +176,10 @@ RSpec.describe Game, type: :model do
       context 'and question is last' do
         it 'should assign final prize' do
           game_w_questions.current_level = Question::QUESTION_LEVELS.max
+          max_prize = Game::PRIZES.max
 
           expect(game_w_questions.answer_current_question!(answer)).to be(true)
-          expect(game_w_questions.prize).to eq(1000000)
+          expect(game_w_questions.prize).to eq(max_prize)
         end
 
         it 'should finish game with status won' do

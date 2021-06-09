@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'users/show', type: :view do
   describe 'view show profile' do
-    let(:user) { FactoryGirl.build_stubbed(:user, name: 'Алекс') }
+    let(:user) { FactoryGirl.create(:user, name: 'Алекс') }
 
     before(:each) do
       assign(:user, user)
